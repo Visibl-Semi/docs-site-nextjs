@@ -122,7 +122,7 @@ export function Navbar({ items }: NavBarProps): ReactElement {
             {renderComponent(themeConfig.logo)}
           </div>
         )}
-        <div className="_flex _gap-4 _overflow-x-auto nextra-scrollbar _py-1.5">
+        {/* <div className="_flex _gap-4 _overflow-x-auto nextra-scrollbar _py-1.5">
           {items.map(pageOrMenu => {
             if (pageOrMenu.display === 'hidden') return null
 
@@ -165,18 +165,18 @@ export function Navbar({ items }: NavBarProps): ReactElement {
               </Anchor>
             )
           })}
-        </div>
+        </div> */}
 
         {process.env.NEXTRA_SEARCH &&
           renderComponent(themeConfig.search.component, {
             className: 'max-md:_hidden'
           })}
 
-        {themeConfig.project.link ? (
+        {/* {themeConfig.project.link ? (
           <Anchor href={themeConfig.project.link} newWindow>
             {renderComponent(themeConfig.project.icon)}
           </Anchor>
-        ) : null}
+        ) : null} */}
 
         {themeConfig.chat.link ? (
           <Anchor href={themeConfig.chat.link} newWindow>

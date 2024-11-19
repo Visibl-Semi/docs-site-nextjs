@@ -116,7 +116,8 @@ export function TOC({ toc, filePath }: TOCProps): ReactElement {
             '_mx-4' // for border top width
           )}
         >
-          {themeConfig.feedback.content ? (
+          <span className="_text-[8px] ">VISIBL SEMICONDUCTORS<sup>TM</sup></span>
+          {/* {themeConfig.feedback.content ? (
             <Anchor
               className={linkClassName}
               href={themeConfig.feedback.useLink()}
@@ -124,15 +125,15 @@ export function TOC({ toc, filePath }: TOCProps): ReactElement {
             >
               {renderComponent(themeConfig.feedback.content)}
             </Anchor>
-          ) : null}
+          ) : null} */}
 
-          {renderComponent(themeConfig.editLink.component, {
+          {/* {renderComponent(themeConfig.editLink.component, {
             filePath,
             className: linkClassName,
             children: renderComponent(themeConfig.editLink.content)
-          })}
+          })} */}
 
-          {renderComponent(themeConfig.toc.extraContent)}
+          {/* {renderComponent(themeConfig.toc.extraContent)} */}
 
           {themeConfig.toc.backToTop && (
             <BackToTop className={linkClassName} hidden={activeIndex < 2}>
