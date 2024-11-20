@@ -208,6 +208,9 @@ export function MentionPopup({ isVisible, position, onSelect, searchTerm = '' }:
     top: position.top,
     left: position.left,
     height: '16rem',
+    maxWidth: '384px',
+    position: 'absolute' as const,
+    transform: 'none',
   };
 
   if (!isVisible) return null;
@@ -224,7 +227,7 @@ export function MentionPopup({ isVisible, position, onSelect, searchTerm = '' }:
         initial={{ opacity: 0, x: 10 }}
         animate={{ opacity: 1, x: 0 }}
         exit={{ opacity: 0, x: 10 }}
-        className="absolute _z-50 _bg-popover _border _rounded-lg _shadow-lg _p-2 _w-96"
+        className="absolute _z-[9999] _bg-popover _border _rounded-lg _shadow-lg _p-2 _w-96"
         style={popupStyles}
       >
         <div className="_flex _items-center _gap-2 _mb-2 _px-2">
@@ -257,7 +260,7 @@ export function MentionPopup({ isVisible, position, onSelect, searchTerm = '' }:
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 10 }}
-      className="absolute _z-50 _bg-popover _border _rounded-lg _p-2 _shadow-lg _w-96"
+      className="absolute _z-[9999] _bg-popover _border _rounded-lg _p-2 _shadow-lg _w-96"
       style={popupStyles}
     >
       <div className="_flex _flex-col _gap-1 _overflow-y-auto _h-full">

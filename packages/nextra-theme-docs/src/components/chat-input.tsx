@@ -12,17 +12,20 @@ const ChatInput = () => {
     const value = event.target.value;
     setInputValue(value);
     
-    if (value.endsWith('@')) {
+    if (value.slice(-1) === '@') {
       const input = inputRef.current;
       if (input) {
-        const rect = input.getBoundingClientRect();
-        const charWidth = 8;
-        const cursorPosition = input.selectionStart || 0;
-        const leftOffset = Math.min((cursorPosition * charWidth), rect.width - 384);
+        // Get input element's position
+        const inputRect = input.getBoundingClientRect();
+        const cursorPosition = input.selectionEnd || 0;
         
+        // Calculate approximate cursor position based on character width
+        const textWidth = getTextWidth(value.substring(0, cursorPosition), getComputedStyle(input).font);
+        
+        // Set popup position relative to cursor position
         setMentionPosition({
-          top: rect.bottom + window.scrollY + 5,
-          left: rect.left + leftOffset
+          top: inputRect.height + 5, // Position below input with small gap
+          left: Math.min(textWidth, inputRect.width - 384) // 384px is popup width
         });
         
         setShowMentionPopup(true);
@@ -33,10 +36,21 @@ const ChatInput = () => {
     }
   };
 
+  // Helper function to calculate text width
+  const getTextWidth = (text: string, font: string): number => {
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    if (context) {
+      context.font = font;
+      return context.measureText(text).width;
+    }
+    return 0;
+  };
+
   const checkForMentionTrigger = (value: string) => {
     const input = inputRef.current;
     if (!input) return;
-
+    
     const cursorPosition = input.selectionEnd || 0;
     const textBeforeCursor = value.slice(0, cursorPosition);
     const lastAtIndex = textBeforeCursor.lastIndexOf('@');
@@ -52,7 +66,15 @@ const ChatInput = () => {
       return;
     }
 
-    setShowMentionPopup(true);
+    // Calculate position based on cursor position
+    const inputRect = input.getBoundingClientRect();
+    const textWidth = getTextWidth(textBeforeCursor, getComputedStyle(input).font);
+    
+    setMentionPosition({
+      top: inputRect.height + 5,
+      left: Math.min(textWidth, inputRect.width - 384)
+    });
+    
     setMentionFilter(textAfterLastAt);
   };
 
@@ -65,7 +87,7 @@ const ChatInput = () => {
   };
 
   return (
-    <div className="_container _px-4">
+    <div className="_container _px-4 _relative">
       <div className="_rounded-md _p-3 _border _border-white/10">
         <div className="_header _mb-2">
         
