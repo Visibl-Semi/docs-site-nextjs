@@ -5,6 +5,12 @@ export default defineConfig({
   entry: ['src/index.tsx'],
   format: 'esm',
   dts: true,
-  external: ['nextra'],
+  external: [
+    'react',
+    'react-dom',
+    'framer-motion',
+    'lucide-react',
+    'nextra'
+  ],
   outExtension: () => ({ js: '.js' })
 })

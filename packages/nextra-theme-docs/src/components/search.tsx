@@ -15,6 +15,7 @@ import { Fragment, useCallback, useEffect, useRef, useState } from 'react'
 import { useMenu, useThemeConfig } from '../contexts'
 import type { SearchResult } from '../types'
 import { renderComponent, renderString } from '../utils'
+import { AIChatPopup } from './AIChatPopup'
 
 type SearchProps = {
   className?: string
@@ -43,6 +44,7 @@ export function Search({
   const [focused, setFocused] = useState(false)
   const mounted = useMounted()
   const inputRef = useRef<HTMLInputElement>(null)
+  const [showAIChat, setShowAIChat] = useState(false)
 
   useEffect(() => {
     function down(event: globalThis.KeyboardEvent) {
@@ -106,6 +108,12 @@ export function Search({
   const handleChange = useCallback(
     (event: SyntheticEvent<HTMLInputElement>) => {
       const { value } = event.currentTarget
+      if (value === ' ') {
+        inputRef.current?.blur()
+        setShowAIChat(true)
+        onChange('')
+        return
+      }
       onChange(value)
     },
     [onChange]
@@ -132,101 +140,107 @@ export function Search({
   // }, [results])
 
   return (
-    <Combobox onChange={handleSelect}>
-      <div
-        className={cn(
-          '_not-prose', // for blog
-          '_relative _flex _items-center',
-          '_text-gray-900 dark:_text-gray-300',
-          'contrast-more:_text-gray-800 contrast-more:dark:_text-gray-300',
-          className
-        )}
-      >
-        <ComboboxInput
-          ref={inputRef}
-          spellCheck={false}
-          className={({ focus }) =>
+    <>
+      <Combobox onChange={handleSelect}>
+        <div
+          className={cn(
+            '_not-prose', // for blog
+            '_relative _flex _items-center',
+            '_text-gray-900 dark:_text-gray-300',
+            'contrast-more:_text-gray-800 contrast-more:dark:_text-gray-300',
+            className
+          )}
+        >
+          <ComboboxInput
+            ref={inputRef}
+            spellCheck={false}
+            className={({ focus }) =>
+              cn(
+                '_rounded-lg _px-3 _py-2 _transition-colors',
+                '_w-full md:_w-64',
+                '_text-base _leading-tight md:_text-sm',
+                focus
+                  ? '_bg-transparent nextra-focusable'
+                  : '_bg-black/[.05] dark:_bg-gray-50/10',
+                'placeholder:_text-gray-500 dark:placeholder:_text-gray-400',
+                'contrast-more:_border contrast-more:_border-current',
+                '[&::-webkit-search-cancel-button]:_appearance-none'
+              )
+            }
+            autoComplete="off"
+            type="search"
+            onChange={handleChange}
+            onFocus={handleFocus}
+            onBlur={handleFocus}
+            value={value}
+            placeholder={renderString(themeConfig.search.placeholder)}
+          />
+          {icon}
+        </div>
+        <ComboboxOptions
+          transition
+          anchor={{ to: 'top end', gap: 10, padding: 16 }}
+          className={({ open }) =>
             cn(
-              '_rounded-lg _px-3 _py-2 _transition-colors',
-              '_w-full md:_w-64',
-              '_text-base _leading-tight md:_text-sm',
-              focus
-                ? '_bg-transparent nextra-focusable'
-                : '_bg-black/[.05] dark:_bg-gray-50/10',
-              'placeholder:_text-gray-500 dark:placeholder:_text-gray-400',
-              'contrast-more:_border contrast-more:_border-current',
-              '[&::-webkit-search-cancel-button]:_appearance-none'
+              'nextra-search-results', // for userspace styling
+              'nextra-scrollbar max-md:_h-full',
+              '_border _border-gray-200 _text-gray-100 dark:_border-neutral-800',
+              '_z-20 _rounded-xl _py-2.5 _shadow-xl',
+              'contrast-more:_border contrast-more:_border-gray-900 contrast-more:dark:_border-gray-50',
+              '_backdrop-blur-lg _bg-[rgb(var(--nextra-bg),.8)]',
+              'motion-reduce:_transition-none _transition-opacity',
+              open ? '_opacity-100' : '_opacity-0',
+              error || loading || !results.length
+                ? 'md:_h-[100px]'
+                : // headlessui adds max-height as style, use !important to override
+                  'md:!_max-h-[min(calc(100vh-5rem),400px)]',
+              '_w-full md:_w-[576px]',
+              'empty:_invisible'
             )
           }
-          autoComplete="off"
-          type="search"
-          onChange={handleChange}
-          onFocus={handleFocus}
-          onBlur={handleFocus}
-          value={value}
-          placeholder={renderString(themeConfig.search.placeholder)}
-        />
-        {icon}
-      </div>
-      <ComboboxOptions
-        transition
-        anchor={{ to: 'top end', gap: 10, padding: 16 }}
-        className={({ open }) =>
-          cn(
-            'nextra-search-results', // for userspace styling
-            'nextra-scrollbar max-md:_h-full',
-            '_border _border-gray-200 _text-gray-100 dark:_border-neutral-800',
-            '_z-20 _rounded-xl _py-2.5 _shadow-xl',
-            'contrast-more:_border contrast-more:_border-gray-900 contrast-more:dark:_border-gray-50',
-            '_backdrop-blur-lg _bg-[rgb(var(--nextra-bg),.8)]',
-            'motion-reduce:_transition-none _transition-opacity',
-            open ? '_opacity-100' : '_opacity-0',
-            error || loading || !results.length
-              ? 'md:_h-[100px]'
-              : // headlessui adds max-height as style, use !important to override
-                'md:!_max-h-[min(calc(100vh-5rem),400px)]',
-            '_w-full md:_w-[576px]',
-            'empty:_invisible'
-          )
-        }
-      >
-        {error ? (
-          <span className="_flex _select-none _justify-center _gap-2 _p-8 _text-center _text-sm _text-red-500">
-            <InformationCircleIcon className="_size-5" />
-            {renderString(themeConfig.search.error)}
-          </span>
-        ) : loading ? (
-          <span className="_flex _select-none _justify-center _gap-2 _p-8 _text-center _text-sm _text-gray-400">
-            <SpinnerIcon className="_size-5 _animate-spin" />
-            {renderComponent(themeConfig.search.loading)}
-          </span>
-        ) : results.length ? (
-          results.map(searchResult => (
-            <Fragment key={searchResult.id}>
-              {searchResult.prefix}
-              <ComboboxOption
-                as={NextLink}
-                value={searchResult}
-                href={searchResult.route}
-                className={({ focus }) =>
-                  cn(
-                    '_mx-2.5 _break-words _rounded-md',
-                    'contrast-more:_border',
-                    focus
-                      ? '_text-primary-600 contrast-more:_border-current _bg-primary-500/10'
-                      : '_text-gray-800 dark:_text-gray-300 contrast-more:_border-transparent',
-                    '_block _scroll-m-12 _px-2.5 _py-2'
-                  )
-                }
-              >
-                {searchResult.children}
-              </ComboboxOption>
-            </Fragment>
-          ))
-        ) : (
-          value && renderComponent(themeConfig.search.emptyResult)
-        )}
-      </ComboboxOptions>
-    </Combobox>
+        >
+          {error ? (
+            <span className="_flex _select-none _justify-center _gap-2 _p-8 _text-center _text-sm _text-red-500">
+              <InformationCircleIcon className="_size-5" />
+              {renderString(themeConfig.search.error)}
+            </span>
+          ) : loading ? (
+            <span className="_flex _select-none _justify-center _gap-2 _p-8 _text-center _text-sm _text-gray-400">
+              <SpinnerIcon className="_size-5 _animate-spin" />
+              {renderComponent(themeConfig.search.loading)}
+            </span>
+          ) : results.length ? (
+            results.map(searchResult => (
+              <Fragment key={searchResult.id}>
+                {searchResult.prefix}
+                <ComboboxOption
+                  as={NextLink}
+                  value={searchResult}
+                  href={searchResult.route}
+                  className={({ focus }) =>
+                    cn(
+                      '_mx-2.5 _break-words _rounded-md',
+                      'contrast-more:_border',
+                      focus
+                        ? '_text-primary-600 contrast-more:_border-current _bg-primary-500/10'
+                        : '_text-gray-800 dark:_text-gray-300 contrast-more:_border-transparent',
+                      '_block _scroll-m-12 _px-2.5 _py-2'
+                    )
+                  }
+                >
+                  {searchResult.children}
+                </ComboboxOption>
+              </Fragment>
+            ))
+          ) : (
+            value && renderComponent(themeConfig.search.emptyResult)
+          )}
+        </ComboboxOptions>
+      </Combobox>
+      
+      {showAIChat && (
+        <AIChatPopup onClose={() => setShowAIChat(false)} />
+      )}
+    </>
   )
 }
