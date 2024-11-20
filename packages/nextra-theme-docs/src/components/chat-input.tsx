@@ -1,5 +1,9 @@
 import React, { useState, useRef } from 'react';
 import { MentionPopup } from './mention-popup';
+import { ChatOutput } from './chat-output';
+import { ChatMessage } from '../../lib/ollama-client';
+import { cn } from '../../lib/utils';
+import { streamChat } from '../../lib/ollama-client';
 
 interface Mention {
   start: number;
@@ -15,6 +19,9 @@ const ChatInput = () => {
   const [mentions, setMentions] = useState<Mention[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const [cursorPosition, setCursorPosition] = useState(0);
+  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [selectedModel, setSelectedModel] = useState('llama2')
+  const [isWaiting, setIsWaiting] = useState(false);
   
   const adjustTextareaHeight = () => {
     const textarea = inputRef.current;
@@ -146,15 +153,23 @@ const ChatInput = () => {
       }
     }
     
-    if (event.key === 'Enter' && event.shiftKey) {
-      event.preventDefault();
-      const cursorPosition = event.currentTarget.selectionStart || 0;
-      const newValue = 
-        inputValue.slice(0, cursorPosition) + '\n' + 
-        inputValue.slice(cursorPosition);
-      setInputValue(newValue);
-      // Adjust height after adding new line
-      setTimeout(adjustTextareaHeight, 0);
+    // Handle Enter key
+    if (event.key === 'Enter') {
+      if (event.shiftKey) {
+        // Shift+Enter: Add new line
+        event.preventDefault();
+        const cursorPosition = event.currentTarget.selectionStart || 0;
+        const newValue = 
+          inputValue.slice(0, cursorPosition) + '\n' + 
+          inputValue.slice(cursorPosition);
+        setInputValue(newValue);
+        // Adjust height after adding new line
+        setTimeout(adjustTextareaHeight, 0);
+      } else {
+        // Enter without shift: Submit message
+        event.preventDefault();
+        handleSubmit(event);
+      }
     }
   };
 
@@ -216,8 +231,52 @@ const ChatInput = () => {
     return elements;
   };
 
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!inputValue.trim() || isWaiting) return;
+
+    const newMessage: ChatMessage = {
+      role: 'user',
+      content: inputValue
+    };
+
+    setMessages(prev => [...prev, newMessage]);
+    setInputValue('');
+    setIsWaiting(true);
+    adjustTextareaHeight();
+
+    try {
+      // Add system message if needed
+      const allMessages = [
+        { role: 'system', content: 'You are a helpful AI assistant.' },
+        ...messages,
+        newMessage
+      ];
+
+      await streamChat(selectedModel, allMessages, (chunk) => {
+        setMessages(prev => {
+          const lastMessage = prev[prev.length - 1];
+          if (lastMessage?.role === 'assistant') {
+            // Append to existing assistant message
+            return [
+              ...prev.slice(0, -1),
+              { ...lastMessage, content: lastMessage.content + chunk }
+            ];
+          } else {
+            // Create new assistant message
+            return [...prev, { role: 'assistant', content: chunk }];
+          }
+        });
+      });
+    } catch (error) {
+      console.error('Error during chat:', error);
+    } finally {
+      setIsWaiting(false);
+    }
+  };
+
   return (
-    <div className="_container _px-4 _relative">
+    <div className="_flex _flex-col _gap-4">
       <div className="_rounded-md _p-3 _border _border-white/10">
         <div className="_header _mb-2">
         
@@ -258,20 +317,35 @@ const ChatInput = () => {
         />
 
         <div className="_buttons-section _flex _justify-between _items-center _mt-3">
-          <select className="_border-none _bg-transparent _text-gray-400 _text-xs">
-            <option>claude-3.5-sonnet</option>
-            <option>gpt-4</option>
-            <option>code-davinci</option>
+          <select 
+            className="_border-none _bg-transparent _text-gray-400 _text-xs"
+            value={selectedModel}
+            onChange={(e) => setSelectedModel(e.target.value)}
+            disabled={isWaiting}
+          >
+            <option value="llama2">Llama 2</option>
+            <option value="codellama">Code Llama</option>
+            <option value="mistral">Mistral</option>
+            <option value="neural-chat">Neural Chat</option>
           </select>
           
           <div className="_flex _gap-2">
-            <button className="_chat-btn _flex _items-center _px-2 _py-1 _text-gray-400 _rounded-md _text-xs">
+            <button 
+              className={cn(
+                "_chat-btn _flex _items-center _px-2 _py-1 _rounded-md _text-xs",
+                isWaiting ? "_text-gray-500" : "_text-gray-400"
+              )}
+              disabled={isWaiting}
+            >
               <span className="_flex _items-center _gap-1">
-                <span className="_opacity-70">↵</span>
-                <span>chat</span>
+                    <span className="_opacity-70">↵</span>
+                    <span>chat</span>
               </span>
             </button>
-            <button className="_codebase-btn _flex _items-center _px-2 _py-1 _text-gray-400 _rounded-md _text-xs">
+            <button 
+              className="_codebase-btn _flex _items-center _px-2 _py-1 _text-gray-400 _rounded-md _text-xs"
+              disabled={isWaiting}
+            >
               <span className="_flex _items-center _gap-1">
                 <span className="">⌘↵</span>
                 <span>code</span>
@@ -280,6 +354,12 @@ const ChatInput = () => {
           </div>
         </div>
       </div>
+      
+      <ChatOutput 
+        messages={messages}
+        selectedModel={selectedModel}
+        setIsWaiting={setIsWaiting}
+      />
     </div>
   );
 }; 

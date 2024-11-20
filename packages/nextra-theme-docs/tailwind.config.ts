@@ -13,6 +13,7 @@ export default {
   prefix: '_',
   content: [
     './src/**/*.tsx',
+    './src/**/*.css',
     '../nextra/src/client/icons/*.{tsx,svg}',
     '../nextra/src/client/components/**/*.tsx'
   ],
@@ -63,6 +64,23 @@ export default {
         750: makePrimaryColor(-10),
         800: makePrimaryColor(-13),
         900: makePrimaryColor(-21)
+      }
+    },
+    extend: {
+      animation: {
+        shine: 'shine 3s ease-in-out infinite',
+        blink: 'blink 1s step-end infinite',
+      },
+      keyframes: {
+        shine: {
+          '0%': { backgroundPosition: '0% center' },
+          '50%': { backgroundPosition: '100% center' },
+          '100%': { backgroundPosition: '0% center' }
+        },
+        blink: {
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '0' }
+        }
       }
     }
   },
