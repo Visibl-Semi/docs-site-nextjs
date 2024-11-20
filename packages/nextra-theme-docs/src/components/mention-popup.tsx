@@ -207,8 +207,8 @@ export function MentionPopup({ isVisible, position, onSelect, searchTerm = '' }:
   const popupStyles = {
     top: position.top,
     left: position.left,
-    height: '16rem',
-    maxWidth: '384px',
+    height: '14rem',
+    maxWidth: '100%',
     position: 'absolute' as const,
     transform: 'none',
   };
@@ -227,7 +227,7 @@ export function MentionPopup({ isVisible, position, onSelect, searchTerm = '' }:
         initial={{ opacity: 0, x: 10 }}
         animate={{ opacity: 1, x: 0 }}
         exit={{ opacity: 0, x: 10 }}
-        className="absolute _z-[9999] _bg-popover _border _rounded-lg _shadow-lg _p-2 _w-96"
+        className="absolute _z-[9999] _bg-white dark:_bg-black _text-gray-500 dark:_text-gray-400 _border _border-black/10 dark:_border-white/10 _rounded-lg _shadow-lg _p-2 _w-full"
         style={popupStyles}
       >
         <div className="_flex _items-center _gap-2 _mb-2 _px-2">
@@ -238,8 +238,8 @@ export function MentionPopup({ isVisible, position, onSelect, searchTerm = '' }:
             <button
               key={item}
               variant="ghost"
-              className={`_flex _items-center _justify-start _w-full ${
-                index === highlightedIndex ? '_bg-accent' : ''
+              className={`_flex _items-center _justify-start _w-full _px-2 _py-1 _rounded-md ${
+                index === highlightedIndex ? '_bg-white/20' : ''
               }`}
               onClick={() => {
                 const plainName = item.split(' <')[0].split(' (')[0];
@@ -260,7 +260,7 @@ export function MentionPopup({ isVisible, position, onSelect, searchTerm = '' }:
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 10 }}
-      className="absolute _z-[9999] _bg-popover _border _rounded-lg _p-2 _shadow-lg _w-96"
+      className="absolute _ml-14 _mt-6 _z-[9999] _bg-white dark:_bg-black _text-gray-500 dark:_text-gray-400 _border _border-black/10 dark:_border-white/10 _rounded-lg _p-2 _shadow-lg _w-full"
       style={popupStyles}
     >
       <div className="_flex _flex-col _gap-1 _overflow-y-auto _h-full">
@@ -268,8 +268,8 @@ export function MentionPopup({ isVisible, position, onSelect, searchTerm = '' }:
           <button
             key={item.label}
             variant="ghost"
-            className={`_flex _items-center _justify-between _w-full ${
-              index === highlightedIndex ? '_bg-accent' : ''
+            className={`_flex _items-center _justify-between _w-full _px-2 _py-1 _rounded-md ${
+              index === highlightedIndex ? '_bg-white/20' : ''
             }`}
             onClick={() => item.hasSubmenu 
               ? setActiveSubmenu(item.label)
