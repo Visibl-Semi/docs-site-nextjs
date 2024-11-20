@@ -10,7 +10,8 @@ export default defineConfig({
     'react-dom',
     'framer-motion',
     'lucide-react',
-    'nextra'
+    'nextra',
+    'mermaid'
   ],
   outExtension: () => ({ js: '.js' })
 })
