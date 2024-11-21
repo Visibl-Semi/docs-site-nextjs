@@ -33,14 +33,12 @@ export const ChatOutput: React.FC<ChatOutputProps> = ({ messages, selectedModel,
       
       streamChat(
         selectedModel,
-        messages,
         (chunk: string) => {
           console.log('Received chunk in chat-output:', chunk);
           
           let content = '';
           try {
-            const parsedChunk = JSON.parse(chunk);
-            content = parsedChunk.message?.content || '';
+            content = chunk;
             setStreamedContent(prev => prev + content);
           } catch (e) {
             console.error('Error parsing chunk:', e);
@@ -51,7 +49,7 @@ export const ChatOutput: React.FC<ChatOutputProps> = ({ messages, selectedModel,
           let updatedFunctionCallBuffer = '';
 
           // Extract and process function calls
-          const regex = /#FUNC_START#([\s\S]*?)#FUNC_END#/g;
+          const regex = /§§([\s\S]*?)§§/g;
           let match;
           while ((match = regex.exec(combinedContent)) !== null) {
             const functionCallText = match[1];
@@ -126,40 +124,38 @@ export const ChatOutput: React.FC<ChatOutputProps> = ({ messages, selectedModel,
 
   // Render content with markdown support
   const renderContent = (content: string) => {
-    return (
-      <ReactMarkdown
-        components={{
-          code({ inline, className, children, ...props }: ReactMarkdownProps) {
-            const match = /language-(\w+)/.exec(className || '');
-            const hasMermaid = match?.[1] === 'mermaid';
-            const hasNetlistsvg = match?.[1] === 'netlistsvg';
+    const sections = content.split(/(§§(?:markdown|mermaid|netlistsvg)§§[\s\S]*?§§\/(?:markdown|mermaid|netlistsvg)§§)/g);
+    return sections.map((section, index) => {
+      if (section.startsWith('§§markdown§§')) {
+        const markdownContent = section.replace(/§§\/?markdown§§/g, '');
+        return (
+          <div key={index} className="_border _border-white/20 _rounded-md _p-2 _bg-white/8">
+            <ReactMarkdown>{markdownContent}</ReactMarkdown>
+          </div>
+        );
+      } else if (section.startsWith('§§mermaid§§')) {
+        const mermaidContent = section.replace(/§§\/?mermaid§§/g, '');
+        return (
+          <div key={index} className="mermaid" dangerouslySetInnerHTML={{ __html: mermaidContent }} />
+        );
+      } else if (section.startsWith('§§netlistsvg§§')) {
+        const netlistsvgContent = section.replace(/§§\/?netlistsvg§§/g, '');
+        return (
+          <div key={index} className="netlistsvg" dangerouslySetInnerHTML={{ __html: netlistsvgContent }} />
+        );
+      } else {
+        return (
+          <div key={index} className="">
+            <ReactMarkdown>{section}</ReactMarkdown>
+          </div>
 
-            if (hasMermaid || hasNetlistsvg) {
-              return (
-                <div
-                  dangerouslySetInnerHTML={{
-                    __html: (children ?? '').toString()
-                  }}
-                  className={hasMermaid ? 'mermaid' : 'netlistsvg'}
-                />
-              );
-            }
+  
+// style propelry with markdwon
 
-            return inline ? (
-              <code className={className} {...props}>
-                {children}
-              </code>
-            ) : (
-              <pre className={className}>
-                <code {...props}>{children}</code>
-              </pre>
-            );
-          }
-        }}
-      >
-        {content}
-      </ReactMarkdown>
-    );
+
+        );
+      }
+    });
   };
 
   // Add function to render function call boxes
@@ -173,7 +169,10 @@ export const ChatOutput: React.FC<ChatOutputProps> = ({ messages, selectedModel,
         {functionCall.status === 'complete' && functionCall.result && (
           <div className="_mt-2">
             {functionCall.result.type === 'markdown' ? (
-              renderContent(functionCall.result.content)
+              <div
+                className="_border _border-blue-500 _rounded-md _p-2 _bg-gray-700"
+                dangerouslySetInnerHTML={{ __html: functionCall.result.content }}
+              />
             ) : (
               <div 
                 className={functionCall.result.graphType}
@@ -191,14 +190,23 @@ export const ChatOutput: React.FC<ChatOutputProps> = ({ messages, selectedModel,
       ref={outputRef}
       className="_chat-output _mt-2 _overflow-y-auto _max-h-[50vh]"
     >
-      {/* Show streaming content */}
       <div className="_text-gray-200 _px-2">
         {isStreaming ? (
           <div className="_whitespace-pre-wrap">
             {streamedContent && renderContent(streamedContent)}
             {functionCalls.map((call, idx) => (
               <React.Fragment key={idx}>
-                {renderFunctionCall(call)}
+                {call.status === 'complete' && call.result.type === 'markdown' && (
+                  <div className="_markdown-output">
+                    {renderContent(call.result.content)}
+                  </div>
+                )}
+                {call.status === 'complete' && call.result.type === 'graph' && (
+                  <div 
+                    className={call.result.graphType} 
+                    dangerouslySetInnerHTML={{ __html: call.result.content }}
+                  />
+                )}
               </React.Fragment>
             ))}
             <span className="_inline-block _w-2 _h-4 _bg-gray-400 _animate-blink" />

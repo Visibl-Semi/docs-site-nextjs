@@ -1,31 +1,51 @@
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system'
   content: string
+  function_call?: {
+    name: string
+    arguments: any
+  }
 }
 
 // Define the available functions
 const functions = [
   {
     name: 'generateMarkdown',
-    description: 'Generate formatted markdown content.',
+    description: 'Generate fully formatted markdown content for documentation.',
     parameters: {
-      content: 'string'
+      type: 'object',
+      properties: {
+        content: {
+          type: 'string',
+          description: 'The markdown content to generate or modify.',
+        },
+      },
+      required: ['content'],
     }
   },
   {
     name: 'generateGraph',
     description: 'Generate a graph visualization.',
     parameters: {
-      code: 'string',
-      type: 'string'
+      type: 'object',
+      properties: {
+        code: {
+          type: 'string',
+          description: 'The graph code or description.',
+        },
+        type: {
+          type: 'string',
+          description: "The type of graph to generate ('mermaid' or 'netlistsvg').",
+        },
+      },
+      required: ['code', 'type'],
     }
   }
 ];
 
 export const streamChat = async (
   model: string,
-  messages: ChatMessage[],
-  onChunk: (chunk: string) => void
+  onChunk?: (chunk: string) => void
 ) => {
   try {
     const response = await fetch('http://localhost:11434/api/chat', {
@@ -42,45 +62,36 @@ export const streamChat = async (
       }),
     });
 
-    const reader = response.body?.getReader();
-    if (!reader) throw new Error('No reader available');
+    if (!response.ok || !response.body) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
 
-    let partial = '';
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let fullContent = '';
 
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
 
-      const chunk = new TextDecoder().decode(value);
-      console.log('Received chunk:', chunk);
-      partial += chunk;
-
-      onChunk(chunk);
-
-      const lines = partial.split('\n');
-      partial = lines.pop() || '';
+      const chunk = decoder.decode(value);
+      console.log('Raw chunk:', chunk);
+      const lines = chunk.split('\n').filter(line => line.trim());
 
       for (const line of lines) {
-        if (line.trim() === '') continue;
         try {
           const data = JSON.parse(line);
-          if (data.choices) {
-            for (const choice of data.choices) {
-              if (choice.delta?.content) {
-                onChunk(choice.delta.content);
-              } else if (choice.delta?.function_call) {
-                const { name, arguments: args } = choice.delta.function_call;
-                const functionResult = await handleFunctionCall(name, args);
-                onChunk(`#FUNC_START#${JSON.stringify({ name, result: functionResult })}#FUNC_END#`);
-                messages.push({
-                  role: 'assistant',
-                  content: '',
-                  function_call: { name, arguments: args },
-                });
-                messages.push({ role: 'function', name, content: functionResult });
-                await streamChat(model, messages, onChunk);
-                return;
-              }
+          console.log('Parsed data:', data);
+          if (data.message?.content) {
+            const content = data.message.content;
+            console.log('Content chunk:', content);
+            if (onChunk && typeof onChunk === 'function') {
+              onChunk(content);
+            }
+            if (data.message.type === 'documentation') {
+              fullContent += `§§markdown§§${content}§§/markdown§§`;
+            } else {
+              fullContent += content;
             }
           }
         } catch (e) {
@@ -88,11 +99,13 @@ export const streamChat = async (
         }
       }
     }
+
+    return fullContent;
   } catch (error) {
     console.error('Error in streamChat:', error);
     throw error;
   }
-}
+};
 
 export const handleFunctionCall = async (name: string, args: string) => {
   const parsedArgs = JSON.parse(args);
@@ -100,11 +113,12 @@ export const handleFunctionCall = async (name: string, args: string) => {
   switch (name) {
     case 'generateMarkdown':
       // Process markdown generation
-      return await generateMarkdown(parsedArgs.content);
+      return `§§markdown§§${await generateMarkdown(parsedArgs.content)}§§/markdown§§`;
 
     case 'generateGraph':
       // Process graph generation
-      return await generateGraph(parsedArgs.code, parsedArgs.type);
+      const graphTypeFlag = parsedArgs.type === 'mermaid' ? 'mermaid' : 'netlistsvg';
+      return `§§${graphTypeFlag}§§${await generateGraph(parsedArgs.code, parsedArgs.type)}§§/${graphTypeFlag}§§`;
 
     default:
       throw new Error(`Unknown function: ${name}`);
@@ -114,7 +128,7 @@ export const handleFunctionCall = async (name: string, args: string) => {
 // Example implementations
 const generateMarkdown = async (content: string): Promise<string> => {
   // Your logic to generate or modify markdown content
-  return `Processed Markdown Content:\n${content}`;
+  return `<div class="_border _border-blue-500 _rounded-md _p-2 _bg-gray-700">${content}</div>`;
 };
 
 const generateGraph = async (code: string, type: string): Promise<string> => {
@@ -142,39 +156,36 @@ const generateGraph = async (code: string, type: string): Promise<string> => {
   }
 };
 
+
 const messages: ChatMessage[] = [
   {
     role: 'system',
-    content: `You are an assistant that can generate and modify markdown content and create graph visualizations using the functions provided.
+    content: `You are an intelligent assistant tasked with generating content that includes both documentation and non-documentation parts. It is crucial that you adhere to the following guidelines when formatting your output:
 
-Available functions:
+1. **Documentation Sections**:
+   - Wrap documentation content with \`§§markdown§§\` at the beginning and \`§§/markdown§§\` at the end. This ensures that the content is styled as markdown in the chat output.
 
-1. **generateMarkdown**:
-   - **Description**: Generate formatted markdown content.
-   - **Parameters**:
-     - \`content\` (string): The markdown content to generate or modify.
+2. **Graph Visualizations**:
+   - For graph content, use \`§§mermaid§§\` or \`§§netlistsvg§§\` at the beginning and \`§§/mermaid§§\` or \`§§/netlistsvg§§\` at the end, depending on the graph type.
 
-2. **generateGraph**:
-   - **Description**: Generate a graph visualization.
-   - **Parameters**:
-     - \`code\` (string): The graph code or description.
-     - \`type\` (string): The type of graph to generate ('mermaid' or 'netlistsvg').
+3. **Non-Documentation Text**:
+   - Any text that introduces, transitions, or concludes the message should not be wrapped with special symbols. This text will appear as regular text in the chat output.
 
-When you need to use a function, respond by providing a function call in the following format:
+**Example of Complex Output**:
+When generating content that includes both documentation and non-documentation parts, ensure only the documentation is wrapped:
 
-\`\`\`json
-{
-  "function_call": {
-    "name": "function_name",
-    "arguments": {
-      "argument1": "value1",
-      "argument2": "value2"
-    }
-  }
-}
+\`\`\`
+Here is the introduction to the documentation:
+§§markdown§§
+### Documentation Section
+
+This section provides detailed information about the API usage.
+§§/markdown§§
+
+Now, let's move on to the next topic.
 \`\`\`
 
-Only include the function call in your response when necessary, and do not include any extra text outside of the JSON object.`,
+This ensures that the content is processed correctly and only the documentation parts are styled in the chat output.`
   },
   // User messages will be appended here
 ];

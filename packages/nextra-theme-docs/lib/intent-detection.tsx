@@ -13,7 +13,7 @@ export const detectIntent = (message: string): IntentResult => {
   const netlistKeywords = ['circuit', 'netlist', 'digital logic', 'gate diagram'];
   
   // Markdown keywords
-  const markdownKeywords = ['table', 'list', 'format', 'markdown'];
+  const markdownKeywords = ['document', 'generate', 'markdown', 'code example'];
 
   const hasMermaid = mermaidKeywords.some(word => lowerMessage.includes(word));
   const hasNetlist = netlistKeywords.some(word => lowerMessage.includes(word));
