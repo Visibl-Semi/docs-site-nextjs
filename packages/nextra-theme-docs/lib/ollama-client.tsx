@@ -188,4 +188,3 @@ This ensures that the content is processed correctly and only the documentation 
   },
   // User messages will be appended here
 ];
-

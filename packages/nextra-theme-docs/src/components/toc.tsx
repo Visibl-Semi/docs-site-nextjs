@@ -10,6 +10,7 @@ import { Anchor } from './anchor'
 import { BackToTop } from './back-to-top'
 import RightPanel from './rightpanel/page'
 import ChatInput from './chat-input'
+import { Timeline } from './timeline'
 
 export type TOCProps = {
   toc: Heading[]
@@ -24,7 +25,7 @@ const linkClassName = cn(
 )
 
 export function TOC({ toc, filePath }: TOCProps): ReactElement {
-  const [activeView, setActiveView] = useState<'toc' | 'chat'>('toc')
+  const [activeView, setActiveView] = useState<'toc' | 'chat' | 'timeline'>('toc')
   const activeAnchor = useActiveAnchor()
   const tocRef = useRef<HTMLUListElement>(null)
   const themeConfig = useThemeConfig()
@@ -76,6 +77,17 @@ export function TOC({ toc, filePath }: TOCProps): ReactElement {
           )}
         >
           Chat
+        </button>
+        <button
+          onClick={() => setActiveView('timeline')}
+          className={cn(
+            '_px-3 _py-1',
+            activeView === 'timeline'
+              ? '_border-b-2 _border-zinc-200 _font-medium'
+              : '_text-gray-700 dark:_text-gray-400'
+          )}
+        >
+          Timeline
         </button>
         <button
           onClick={() => setActiveView('toc')}
@@ -173,12 +185,14 @@ export function TOC({ toc, filePath }: TOCProps): ReactElement {
             </div>
           )}
         </>
-      ) : (
+      ) : activeView === 'chat' ? (
         <div className="">
           <div className="">
             <ChatInput />
           </div>
         </div>
+      ) : (
+        <Timeline filePath={filePath} />
       )}
     </div>
   )
