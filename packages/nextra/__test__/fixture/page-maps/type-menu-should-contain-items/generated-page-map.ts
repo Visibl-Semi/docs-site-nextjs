@@ -1,6 +1,6 @@
-import meta from "./_meta.ts";
+import type_menu_should_contain_items_meta from "../type-menu-should-contain-items/_meta.ts";
 export const pageMap = [{
-  data: meta
+  data: type_menu_should_contain_items_meta
 }, {
   name: "mix",
   route: "/mix",

@@ -1,4 +1,4 @@
-import one_two_meta from "./one/two/_meta.ts";
+import respect_order_for_type_separator_menu_and_item_with_href_one_two_meta from "../respect-order-for-type-separator-menu-and-item-with-href/one/two/_meta.ts";
 export const pageMap = [{
   name: "one",
   route: "/one",
@@ -6,7 +6,7 @@ export const pageMap = [{
     name: "two",
     route: "/one/two",
     children: [{
-      data: one_two_meta
+      data: respect_order_for_type_separator_menu_and_item_with_href_one_two_meta
     }, {
       name: "1-one",
       route: "/one/two/1-one",

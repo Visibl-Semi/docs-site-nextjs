@@ -3,7 +3,7 @@ import { useInView } from 'react-intersection-observer'
 
 export default function Video({ src, caption, ratio }) {
   const [inViewRef, inView] = useInView({ threshold: 1 })
-  const videoRef = useRef()
+  const videoRef = useRef<HTMLVideoElement | null>(null)
 
   const setRefs = useCallback(
     node => {
@@ -26,14 +26,12 @@ export default function Video({ src, caption, ratio }) {
   )
 
   useEffect(() => {
-    if (!videoRef?.current) {
-      return
-    }
-
-    if (inView) {
-      videoRef.current.play()
-    } else {
-      videoRef.current.pause()
+    if (videoRef.current) {
+      if (inView) {
+        videoRef.current.play()
+      } else {
+        videoRef.current.pause()
+      }
     }
   }, [inView])
 

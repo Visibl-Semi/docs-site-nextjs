@@ -3,129 +3,99 @@ title: React Hooks for Data Fetching
 searchable: false
 ---
 
-import Features from '@components/features'
-import { Callout, Tabs } from 'nextra/components'
+import { Button } from 'nextra/components'
+import { ChevronRight, Globe, Plus } from 'lucide-react'
+import Spline from '@splinetool/react-spline'
 
-{/* wrapped with {} to mark it as javascript so mdx will not put it under a p tag */}
-{<h1 className="text-center font-extrabold md:text-5xl mt-8">SWR</h1>}
+export const repositories = [
+  {
+    id: 1,
+    name: 'SWR Documentation',
+    url: 'https://swr.vercel.app'
+  },
+  {
+    id: 2,
+    name: 'Next.js Documentation',
+    url: 'https://nextjs.org/docs'
+  }
+];
 
-<Tabs items={['JavaScript', 'C++', {label:'C', disabled: true}, 'Python', 'TypeScript', 'GraphQL', 'Rust', 'C#', 'Go', 'HTML', 'CSS', 'plaintext', 'bash']} defaultIndex={1}>
-  <Tabs.Tab>
-    ```js filename="hi.js"
-    import { useState, useEffect } from 'react';
-    ```
-  </Tabs.Tab>
-  <Tabs.Tab>
-    ```cpp filename="hi.cpp"
-    #include <iostream>
-    ```
-  </Tabs.Tab>
-  <Tabs.Tab>
-    ```c filename="hi.c"
-    #include <stdio.h>
-    ```
-  </Tabs.Tab>
-  <Tabs.Tab>
-    ```c filename="hi.c"
-    #include <stdio.h>
-    ```
-  </Tabs.Tab>
-</Tabs>
+export function ChipSpline() {
+  return (
+    <main className="w-full h-full">
+      <div className="h-[60vh] pointer-events-none select-none">
+        <Spline
+          scene="https://prod.spline.design/DrhV1oiPAp4OLibv/scene.splinecode"
+        />
+      </div>
+    </main>
+  );
+}
 
-<Features />
+{/* Hero Section */}
+<div className="relative bg-neutral dark:bg-black flex items-center justify-center w-full overflow-y-auto mt-0">
+  <div className="w-full max-w-6xl mx-auto">
+    <div className="flex flex-col w-full">
+      {/* Spline Section */}
+      <div className="w-full text-white pt-0">
+        <div className="text-center w-full px-8">
+          <div className="flex flex-col justify-center">
+            <ChipSpline />
+          </div>
+        </div>
+      </div>
 
-The name “SWR” is derived from `stale-while-revalidate`, a HTTP cache
-invalidation strategy popularized by
-[HTTP RFC 5861](https://tools.ietf.org/html/rfc5861). SWR is a strategy to first
-return the data from cache (stale), then send the fetch request (revalidate),
-and finally come with the up-to-date data.
+      {/* About Section */}
+      <div className="px-8 my-8">
+        <p className="text-gray-600 dark:text-zinc-400 uppercase leading-relaxed max-w-2xl">
+          <span className="text-gray-900 dark:text-zinc-100 text-6xl uppercase">Visibl Docs</span>
+          <br/>
+          <span className="text-gray-600 dark:text-zinc-400 text-md uppercase">Put your documentation on autopilot with an AI-native documentation solution tailored for semiconductor design teams.</span>
+        </p>
+      </div>
 
-<Callout emoji="✅">
-  With SWR, components will get a stream of data updates **constantly** and
-  **automatically**.
+      {/* Repositories Section */}
+      <div className="w-full text-gray-900 dark:text-white flex flex-col border-t border-gray-200 dark:border-zinc-800">
+        <div className="px-8 py-4 border-b border-gray-200 dark:border-zinc-800 flex justify-between items-center">
+          <h2 className="text-xl font-semibold">REPOSITORIES</h2>
+          <button className="text-gray-500 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-white transition-colors">
+            <Plus size={24} />
+          </button>
+        </div>
+        
+        <div className="overflow-y-auto flex-1">
+          {repositories?.length > 0 ? (
+            <div className="divide-y divide-gray-200 dark:divide-zinc-800">
+              {repositories.map(repo => (
+                <a 
+                  key={repo.id}
+                  href={repo.url}
+                  className="block px-8 py-4 hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors"
+                >
+                  {repo.name}
+                </a>
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full text-center px-8">
+              <Plus size={48} className="text-gray-400 dark:text-zinc-500 mb-4" />
+              <h3 className="text-2xl font-semibold mb-2">Get Started</h3>
+              <p className="text-gray-500 dark:text-zinc-400">Upload New Docs Site</p>
+            </div>
+          )}
+        </div>
+      </div>
 
-And the UI will be always **fast** and **reactive**.
-
-</Callout>
-
-<div className="mb-20 mt-16 text-center">
-  [Get Started](/docs/getting-started) · [Examples](/examples) · [Blog](/blog) ·
-  [GitHub Repository](https://github.com/vercel/swr)
+      {/* Social Links */}
+      <div className="w-full flex justify-between items-center px-8 py-4 text-sm text-gray-500 dark:text-zinc-500 border-t border-gray-200 dark:border-zinc-800">
+        <div className="border border-gray-200 dark:border-zinc-800 rounded-lg p-3 flex items-center gap-2">
+          <Globe size={16} />
+        </div>
+        <div className="text-right">
+          <a href="https://github.com/vercel/swr" className="block hover:text-gray-900 dark:hover:text-zinc-300">GitHub</a>
+          <a href="https://twitter.com/vercel" className="block hover:text-gray-900 dark:hover:text-zinc-300">Twitter</a>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
-
-## Overview
-
-```jsx
-import useSWR from 'swr'
-
-function Profile() {
-  const { data, error } = useSWR('/api/user', fetcher)
-
-  if (error) return <div>failed to load</div>
-  if (!data) return <div>loading...</div>
-  return <div>hello {data.name}!</div>
-}
-```
-
-```diff
-import useSWR from 'swr'
-
-function Profile() {
-  const { data, error } = useSWR('/api/user', fetcher)
-
--  if (error) return <div>failed to load</div>
-+  if (!data) return <div>loading...</div>
-  return <div>hello {data.name}!</div>
-}
-```
-
-In this example, the `useSWR` hook accepts a `key` string and a `fetcher`
-function. `key` is a unique identifier of the data (normally the API URL) and
-will be passed to `fetcher`. `fetcher` can be any asynchronous function which
-returns the data, you can use the native fetch or tools like Axios.
-
-The hook returns 2 values: `data` and `error`, based on the status of the
-request.
-
-## Features
-
-With just one single line of code, you can simplify the logic of data fetching
-in your project, and also have all these amazing features out-of-the-box:
-
-- **Fast**, **lightweight** and **reusable** data fetching
-- Built-in **cache** and request deduplication
-- **Real-time** experience
-- Transport and protocol agnostic
-- SSR / ISR / SSG support
-- TypeScript ready
-- React Native
-
-SWR has you covered in all aspects of speed, correctness, and stability to help
-you build better experiences:
-
-- Fast page navigation
-- Polling on interval
-- Data dependency
-- Revalidation on focus
-- Revalidation on network recovery
-- Local mutation (Optimistic UI)
-- Smart error retry
-- Pagination and scroll position recovery
-- React Suspense
-
-And a lot [more](/docs/getting-started).
-
-## Community
-
-<p className="mt-6 flex h-6 gap-2">
-  <img alt="stars" src="https://badgen.net/github/stars/vercel/swr" />
-  <img alt="downloads" src="https://badgen.net/npm/dt/swr" />
-  <img alt="license" src="https://badgen.net/npm/license/swr" />
-</p>
-
-SWR is created by the same team behind [Next.js](https://nextjs.org), the React
-framework. Follow [@vercel](https://twitter.com/vercel) on Twitter for future
-project updates.
-
-Feel free to join the
-[discussions on GitHub](https://github.com/vercel/swr/discussions)!
